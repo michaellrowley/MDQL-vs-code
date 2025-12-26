@@ -71,7 +71,7 @@ export class CustomDataSourceQueryExecutor {
     return rows.map(row => {
       const projected: KeyValueObject = {};
       query.fields.forEach(field => {
-        if (row.hasOwnProperty(field)) {
+        if (field in row) {
           projected[field] = row[field];
         }
       });

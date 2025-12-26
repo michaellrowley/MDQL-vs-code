@@ -4,6 +4,7 @@ import * as parquet from 'parquetjs';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { Readable } from 'stream';
 import {
   DataSource,
   Table,
@@ -119,7 +120,7 @@ export class S3DataSource implements DataSource {
       });
 
       // Pipe the S3 stream to the parser
-      if (response.Body instanceof require('stream').Readable) {
+      if (response.Body instanceof Readable) {
         response.Body.pipe(parser);
       } else {
         reject(new Error('Unexpected response body type from S3'));
@@ -154,7 +155,7 @@ export class S3DataSource implements DataSource {
         writeStream.on('error', reject);
         writeStream.on('finish', () => resolve());
 
-        if (response.Body instanceof require('stream').Readable) {
+        if (response.Body instanceof Readable) {
           response.Body.pipe(writeStream);
         } else {
           reject(new Error('Unexpected response body type from S3'));
