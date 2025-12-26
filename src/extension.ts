@@ -5,10 +5,12 @@ import * as vscode from "vscode";
 import { registerCodeLens } from "./code-lenses";
 import { InjectCommand } from "./command-inject";
 import { RefreshCommand } from "./command-refresh";
+import { RunQueryCommand } from "./command-run-query";
 import { Config } from "./config";
 import { createLogger, initLogger } from "./logging";
 import { mdqlPlugin } from "./markdown-it-mdql";
 import { createDiagnostics } from "./diagnostics";
+import { dataSourceRegistry, DataSourceConfig } from "./data-sources";
 
 const markdownLanguageId = "markdown";
 
@@ -47,6 +49,26 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(new RefreshCommand(database).register());
   context.subscriptions.push(new InjectCommand(database).register());
+  context.subscriptions.push(new RunQueryCommand().register());
+
+  // Register custom data sources from configuration
+  const dataSourcesConfig = vscode.workspace
+    .getConfiguration("markdown-data-views")
+    .get<DataSourceConfig[]>("dataSources", []);
+  
+  log.info(`Registering ${dataSourcesConfig.length} data sources`);
+  for (const config of dataSourcesConfig) {
+    try {
+      dataSourceRegistry.registerDataSource(config);
+      log.info(`Registered data source: ${config.id} (${config.type})`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error(`Failed to register data source ${config.id}: ${message}`);
+      vscode.window.showErrorMessage(
+        `Failed to register data source ${config.id}: ${message}`
+      );
+    }
+  }
 
   registerCodeLens(context);
   createDiagnostics(context);
